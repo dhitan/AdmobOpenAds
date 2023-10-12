@@ -1,6 +1,6 @@
 # flutter_application_1
 
-A new Flutter project.
+Tugas magang disuruh buat aplikasi bebas isi ads
 
 ## Getting Started
 
