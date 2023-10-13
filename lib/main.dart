@@ -6,12 +6,6 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
 
-  RequestConfiguration requestConfiguration = RequestConfiguration(
-    testDeviceIds: ['ECB3A80DA4A1185CD3906A30F96AD7C3'],
-  );
-
-  MobileAds.instance.updateRequestConfiguration(requestConfiguration);
-
   runApp(const MyApp());
 }
 
@@ -77,7 +71,7 @@ class _MyAppState extends State<MyApp> {
       adUnitId: AdHelper.rewardedAdUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (ad) => setState(() => _rewardedAd),
+        onAdLoaded: (ad) => setState(() => _rewardedAd = ad),
         onAdFailedToLoad: (error) => setState(() => _rewardedAd = null),
       ),
     );
