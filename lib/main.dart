@@ -6,6 +6,12 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
 
+  RequestConfiguration requestConfiguration = RequestConfiguration(
+    testDeviceIds: ['ECB3A80DA4A1185CD3906A30F96AD7C3'],
+  );
+
+  MobileAds.instance.updateRequestConfiguration(requestConfiguration);
+
   runApp(const MyApp());
 }
 
@@ -18,19 +24,82 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   BannerAd? _banner;
+  InterstitialAd? _interstitialAd;
+  RewardedAd? _rewardedAd;
+  int _rewardedScore = 0;
   @override
   void initState() {
     super.initState();
 
     _createBannerAd();
+    _createInterstitialAd();
+    _createRewardedAd();
   }
 
   void _createBannerAd() {
     _banner = BannerAd(
-      size: AdSize.fullBanner, 
-      adUnitId: AdHelper.bannerAdUnitId, 
-      listener: AdHelper.bannerListener, 
-      request: const AdRequest()).. load();
+        size: AdSize.fullBanner,
+        adUnitId: AdHelper.bannerAdUnitId,
+        listener: AdHelper.bannerListener,
+        request: const AdRequest())
+      ..load();
+  }
+
+  void _createInterstitialAd() {
+    InterstitialAd.load(
+      adUnitId: AdHelper.interstitialAdUnitId,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+          onAdLoaded: (ad) => _interstitialAd = ad,
+          onAdFailedToLoad: (LoadAdError error) => _interstitialAd = null),
+    );
+  }
+
+  void _showInterstitialAd() {
+    if (_interstitialAd != null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          ad.dispose();
+          _createInterstitialAd();
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          ad.dispose();
+          _createInterstitialAd();
+        },
+      );
+      _interstitialAd!.show();
+      _interstitialAd = null;
+    }
+  }
+
+  void _createRewardedAd() {
+    RewardedAd.load(
+      adUnitId: AdHelper.rewardedAdUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) => setState(() => _rewardedAd),
+        onAdFailedToLoad: (error) => setState(() => _rewardedAd = null),
+      ),
+    );
+  }
+
+  void _showRewardedAd() {
+    if (_rewardedAd != null) {
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          ad.dispose();
+          _createInterstitialAd();
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          ad.dispose();
+          _createInterstitialAd();
+        }
+      );
+      _rewardedAd!.show(
+        onUserEarnedReward: (ad, reward) => setState(() => _rewardedScore++)
+      );
+      _rewardedAd = null;
+    }
   }
 
   @override
@@ -42,15 +111,25 @@ class _MyAppState extends State<MyApp> {
           Image.asset('Assets/gambar.jpg'),
           titleSection,
           buttonSection,
-          textSection,
+          Container(
+            padding: const EdgeInsets.all(32),
+            child: Text(
+                'Lake Oeschinen lies at the foot of the Blüemlisalp in the Bernese '
+                'but you aint have any money? you just need ur score above 5 to go there '
+                'UR SCORE IS $_rewardedScore'),
+          ),
+          ElevatedButton(
+              onPressed: _showInterstitialAd,
+              child: const Text("InterstitialAd")),
+          ElevatedButton(onPressed: _showRewardedAd, child: const Text('Get 1 free score'))
         ]),
         bottomNavigationBar: _banner == null
             ? Container()
             : Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              height: 52,
-              child: AdWidget(ad: _banner!),
-            ),
+                margin: const EdgeInsets.only(bottom: 12),
+                height: 52,
+                child: AdWidget(ad: _banner!),
+              ),
       ),
     );
   }
@@ -58,62 +137,64 @@ class _MyAppState extends State<MyApp> {
 
 Widget titleSection = Container(
   padding: const EdgeInsets.all(32),
-  child:
-      const Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: <Widget>[
-    Column(
+  child: const Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: <Widget>[
-        Text(
-          "Oeschinen Lake Campground",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        Column(
+          children: <Widget>[
+            Text(
+              "Oeschinen Lake Campground",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Text(
+              "Kandersteg, Switzerland",
+              style: TextStyle(color: Colors.grey),
+            )
+          ],
         ),
-        Text("Kandersteg, Switzerland", style: TextStyle(color: Colors.grey),)
-      ],
-    ),
-    Row(
-      children: [
-        Icon(
-          Icons.star,
-          color: Colors.red,
-        ),
-        Text("41"),
-      ],
-    )
-  ]),
+        Row(
+          children: [
+            Icon(
+              Icons.star,
+              color: Colors.red,
+            ),
+            Text("41"),
+          ],
+        )
+      ]),
 );
 
-Widget buttonSection = Row(mainAxisAlignment: MainAxisAlignment.spaceAround,children: <Widget> [
-  btnSection(Icons.phone, 'Phone'),
-  btnSection(Icons.navigation, 'Route'),
-  btnSection(Icons.share, 'Share')
-],
+Widget buttonSection = Row(
+  mainAxisAlignment: MainAxisAlignment.spaceAround,
+  children: <Widget>[
+    btnSection(Icons.phone, 'Phone'),
+    btnSection(Icons.navigation, 'Route'),
+    btnSection(Icons.share, 'Share')
+  ],
 );
 
 Container btnSection(IconData icon, String text) {
-  return  Container(
-  child: InkWell(
-    onTap: () {
-      
-    },
+  return Container(
+      child: InkWell(
+    onTap: () {},
     child: Column(
-    children: <Widget> [
-      Icon(icon, color: Colors.blue,),
-      Text(text)
-    ],
-  ),
-  )
-);
+      children: <Widget>[
+        Icon(
+          icon,
+          color: Colors.blue,
+        ),
+        Text(text)
+      ],
+    ),
+  ));
 }
 
 Widget textSection = Container(
   padding: const EdgeInsets.all(32),
   child: const Text(
-    'Lake Oeschinen lies at the foot of the Blüemlisalp in the Bernese '
-    'Alps. Situated 1,578 meters above sea level, it is one of the '
-    'larger Alpine Lakes. A gondola ride from Kandersteg, followed by a '
-    'half-hour walk through pastures and pine forest, leads you to the '
-    'lake, which warms to 20 degrees Celsius in the summer. Activities '
-    'enjoyed here include rowing, and riding the summer toboggan run.'
-  ),
+      'Lake Oeschinen lies at the foot of the Blüemlisalp in the Bernese '
+      'but you aint have any money? you just ur score above 5 to go there '
+      'UR SCORE IS'),
 );
 
 // class BannerExample extends StatefulWidget {
