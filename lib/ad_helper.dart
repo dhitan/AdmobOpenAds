@@ -33,7 +33,7 @@ class AdHelper {
       throw UnsupportedError('Unsupported platform');
     }
   }
-
+  
   static final BannerAdListener bannerListener = BannerAdListener(
     onAdLoaded: (ad) => debugPrint('Ad Loaded.'),
     onAdFailedToLoad: (ad, error) {
